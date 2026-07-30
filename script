@@ -1,0 +1,250 @@
+-- JOELVIS POTATO UI
+-- Tabs: Main, Settings, Potato Lab, Fun, About
+-- Button: Launch Potato Mode
+-- Toggle: Butter Boost
+-- Slider: Potato Power (0–100)
+
+local player = game.Players.LocalPlayer
+local gui = Instance.new("ScreenGui")
+gui.Name = "JoelvisPotatoUI"
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
+
+-- THEME (white, brown, black)
+local PotatoTheme = {
+    Background = Color3.fromRGB(220, 200, 180), -- light potato
+    Dark = Color3.fromRGB(80, 60, 40),          -- dark brown
+    Accent = Color3.fromRGB(255, 255, 255),     -- white accent
+    Text = Color3.fromRGB(0, 0, 0),             -- black text
+    Roundness = 12,
+}
+
+local function applyPotatoStyle(object)
+    if object:IsA("Frame") or object:IsA("TextButton") or object:IsA("TextLabel") then
+        object.BackgroundColor3 = PotatoTheme.Background
+        object.BorderSizePixel = 0
+        if object:IsA("TextLabel") or object:IsA("TextButton") then
+            object.TextColor3 = PotatoTheme.Text
+        end
+
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, PotatoTheme.Roundness)
+        corner.Parent = object
+    end
+end
+
+-- MAIN WINDOW
+local main = Instance.new("Frame")
+main.Size = UDim2.new(0, 520, 0, 320)
+main.Position = UDim2.new(0.5, -260, 0.5, -160)
+main.Active = true
+main.Draggable = true
+main.ZIndex = 2
+applyPotatoStyle(main)
+main.Parent = gui
+
+-- TITLE BAR
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 40)
+title.BackgroundColor3 = PotatoTheme.Dark
+title.Text = "🥔 Joelvis Potato UI"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 20
+title.Parent = main
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, PotatoTheme.Roundness)
+titleCorner.Parent = title
+
+-- TAB HOLDER
+local tabHolder = Instance.new("Frame")
+tabHolder.Size = UDim2.new(0, 140, 1, -40)
+tabHolder.Position = UDim2.new(0, 0, 0, 40)
+applyPotatoStyle(tabHolder)
+tabHolder.Parent = main
+
+local tabLayout = Instance.new("UIListLayout", tabHolder)
+tabLayout.Padding = UDim.new(0, 6)
+
+-- PAGES HOLDER
+local pages = Instance.new("Frame")
+pages.Size = UDim2.new(1, -150, 1, -40)
+pages.Position = UDim2.new(0, 150, 0, 40)
+applyPotatoStyle(pages)
+pages.Parent = main
+
+-- CREATE TAB
+local function createTab(name)
+    local tabButton = Instance.new("TextButton")
+    tabButton.Size = UDim2.new(1, -10, 0, 36)
+    tabButton.Text = name
+    tabButton.Font = Enum.Font.Gotham
+    tabButton.TextSize = 16
+    tabButton.TextColor3 = PotatoTheme.Text
+    applyPotatoStyle(tabButton)
+    tabButton.Parent = tabHolder
+
+    local page = Instance.new("ScrollingFrame")
+    page.Size = UDim2.new(1, -10, 1, -10)
+    page.Position = UDim2.new(0, 5, 0, 5)
+    page.CanvasSize = UDim2.new(0, 0, 0, 0)
+    page.ScrollBarThickness = 6
+    page.BackgroundTransparency = 1
+    page.Visible = false
+    page.Parent = pages
+
+    local layout = Instance.new("UIListLayout", page)
+    layout.Padding = UDim.new(0, 10)
+
+    tabButton.MouseButton1Click:Connect(function()
+        for _, p in ipairs(pages:GetChildren()) do
+            if p:IsA("ScrollingFrame") then
+                p.Visible = false
+            end
+        end
+        page.Visible = true
+    end)
+
+    return page
+end
+
+-- BUTTON (Launch Potato Mode)
+local function addPotatoButton(page, text, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -20, 0, 40)
+    btn.Text = text
+    btn.Font = Enum.Font.Gotham
+    btn.TextSize = 16
+    btn.ZIndex = 3
+    applyPotatoStyle(btn)
+    btn.Parent = page
+
+    btn.MouseButton1Click:Connect(function()
+        btn:TweenSize(
+            btn.Size - UDim2.new(0, 4, 0, 4),
+            Enum.EasingDirection.Out,
+            Enum.EasingStyle.Quad,
+            0.08,
+            true
+        )
+        task.wait(0.08)
+        btn:TweenSize(
+            btn.Size + UDim2.new(0, 4, 0, 4),
+            Enum.EasingDirection.Out,
+            Enum.EasingStyle.Quad,
+            0.08,
+            true
+        )
+        callback()
+    end)
+end
+
+-- TOGGLE (Butter Boost)
+local function addPotatoToggle(page, text, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -20, 0, 40)
+    btn.Font = Enum.Font.Gotham
+    btn.TextSize = 16
+    btn.ZIndex = 3
+    applyPotatoStyle(btn)
+    btn.Parent = page
+
+    local state = false
+    btn.Text = text .. " [OFF]"
+
+    btn.MouseButton1Click:Connect(function()
+        state = not state
+        btn.Text = text .. (state and " [ON]" or " [OFF]")
+        btn.BackgroundColor3 = state and PotatoTheme.Accent or PotatoTheme.Background
+        callback(state)
+    end)
+end
+
+-- SLIDER (Potato Power 0–100)
+local function addPotatoSlider(page, text, min, max, callback)
+    local holder = Instance.new("Frame")
+    holder.Size = UDim2.new(1, -20, 0, 70)
+    holder.BackgroundTransparency = 1
+    holder.Parent = page
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 0, 20)
+    label.BackgroundTransparency = 1
+    label.Text = text .. ": " .. tostring(min)
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 16
+    label.TextColor3 = PotatoTheme.Text
+    label.Parent = holder
+
+    local bar = Instance.new("Frame")
+    bar.Size = UDim2.new(1, 0, 0, 12)
+    bar.Position = UDim2.new(0, 0, 0, 30)
+    applyPotatoStyle(bar)
+    bar.Parent = holder
+
+    local fill = Instance.new("Frame")
+    fill.Size = UDim2.new(0, 0, 1, 0)
+    fill.BackgroundColor3 = PotatoTheme.Accent
+    applyPotatoStyle(fill)
+    fill.Parent = bar
+
+    local UIS = game:GetService("UserInputService")
+
+    bar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            local conn
+            conn = UIS.InputChanged:Connect(function(move)
+                if move.UserInputType == Enum.UserInputType.MouseMovement then
+                    local pos = math.clamp(
+                        (move.Position.X - bar.AbsolutePosition.X) / bar.AbsoluteSize.X,
+                        0,
+                        1
+                    )
+                    fill.Size = UDim2.new(pos, 0, 1, 0)
+                    local value = math.floor(min + (max - min) * pos)
+                    label.Text = text .. ": " .. tostring(value)
+                    callback(value)
+                end
+            end)
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    if conn then conn:Disconnect() end
+                end
+            end)
+        end
+    end)
+end
+
+-- CREATE TABS
+local tabMain      = createTab("Main")
+local tabSettings  = createTab("Settings")
+local tabLab       = createTab("Potato Lab")
+local tabFun       = createTab("Fun")
+local tabAbout     = createTab("About")
+
+tabMain.Visible = true
+
+-- MAIN TAB CONTENT
+addPotatoButton(tabMain, "Launch Potato Mode", function()
+    print("Launch Potato Mode activated by Joelvis!")
+end)
+
+addPotatoToggle(tabMain, "Butter Boost", function(state)
+    print("Butter Boost:", state and "ON" or "OFF")
+end)
+
+addPotatoSlider(tabMain, "Potato Power", 0, 100, function(value)
+    print("Potato Power set to:", value)
+end)
+
+-- ABOUT TAB
+local aboutLabel = Instance.new("TextLabel")
+aboutLabel.Size = UDim2.new(1, -20, 0, 200)
+aboutLabel.BackgroundTransparency = 1
+aboutLabel.Text = "🥔 Potato UI by Joelvis"
+aboutLabel.Font = Enum.Font.GothamBold
+aboutLabel.TextSize = 22
+aboutLabel.TextColor3 = PotatoTheme.Text
+aboutLabel.Parent = tabAbout
