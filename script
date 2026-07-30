@@ -1,0 +1,222 @@
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UIS = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+
+local canDoubleJump = false
+local hasDoubleJumped = false
+local doubleJumpEnabled = false
+
+player.CharacterAdded:Connect(function(char)
+	character = char
+	humanoid = char:WaitForChild("Humanoid")
+	canDoubleJump = false
+	hasDoubleJumped = false
+end)
+
+--------------------------------------------------
+-- GUI
+--------------------------------------------------
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "AbilityUI"
+gui.ResetOnSpawn = false
+gui.Parent = playerGui
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0,270,0,150)
+frame.Position = UDim2.new(0.03,0,0.3,0)
+frame.BackgroundColor3 = Color3.fromRGB(28,28,35)
+frame.BorderSizePixel = 0
+frame.Parent = gui
+
+Instance.new("UICorner",frame).CornerRadius = UDim.new(0,12)
+
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.fromRGB(0,170,255)
+stroke.Thickness = 2
+stroke.Parent = frame
+
+--------------------------------------------------
+-- Title
+--------------------------------------------------
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1,0,0,40)
+title.BackgroundTransparency = 1
+title.Text = "Abilities"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 22
+title.TextColor3 = Color3.new(1,1,1)
+title.Parent = frame
+
+--------------------------------------------------
+-- Toggle
+--------------------------------------------------
+
+local button = Instance.new("TextButton")
+button.Size = UDim2.new(.9,0,0,42)
+button.Position = UDim2.new(.05,0,.45,0)
+button.BackgroundColor3 = Color3.fromRGB(60,60,70)
+button.Text = "Double Jump : OFF"
+button.Font = Enum.Font.GothamBold
+button.TextSize = 18
+button.TextColor3 = Color3.new(1,1,1)
+button.AutoButtonColor = false
+button.Parent = frame
+
+Instance.new("UICorner",button).CornerRadius = UDim.new(0,8)
+
+--------------------------------------------------
+-- Hover Animation (PC)
+--------------------------------------------------
+
+button.MouseEnter:Connect(function()
+	TweenService:Create(button,TweenInfo.new(.15),{
+		Size = UDim2.new(.92,0,0,44)
+	}):Play()
+end)
+
+button.MouseLeave:Connect(function()
+	TweenService:Create(button,TweenInfo.new(.15),{
+		Size = UDim2.new(.9,0,0,42)
+	}):Play()
+end)
+
+--------------------------------------------------
+-- Toggle Animation
+--------------------------------------------------
+
+local function Update()
+
+	button.Text = "Double Jump : "..(doubleJumpEnabled and "ON" or "OFF")
+
+	TweenService:Create(
+		button,
+		TweenInfo.new(.2,Enum.EasingStyle.Quad),
+		{
+			BackgroundColor3 = doubleJumpEnabled
+				and Color3.fromRGB(70,220,120)
+				or Color3.fromRGB(60,60,70)
+		}
+	):Play()
+
+end
+
+button.MouseButton1Click:Connect(function()
+
+	doubleJumpEnabled = not doubleJumpEnabled
+
+	TweenService:Create(button,TweenInfo.new(.08),{
+		Size = UDim2.new(.88,0,0,40)
+	}):Play()
+
+	task.wait(.08)
+
+	TweenService:Create(button,TweenInfo.new(.08),{
+		Size = UDim2.new(.9,0,0,42)
+	}):Play()
+
+	Update()
+
+end)
+
+Update()
+
+--------------------------------------------------
+-- Double Jump
+--------------------------------------------------
+
+humanoid.StateChanged:Connect(function(_,new)
+
+	if new == Enum.HumanoidStateType.Landed then
+		canDoubleJump = false
+		hasDoubleJumped = false
+	elseif new == Enum.HumanoidStateType.Freefall then
+		task.wait(0.15)
+		canDoubleJump = true
+	end
+
+end)
+
+UIS.JumpRequest:Connect(function()
+
+	if not doubleJumpEnabled then
+		return
+	end
+
+	if canDoubleJump and not hasDoubleJumped then
+		hasDoubleJumped = true
+		humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+	end
+
+end)
+
+--------------------------------------------------
+-- Draggable Window
+--------------------------------------------------
+
+local dragging = false
+local dragStart
+local startPos
+local dragInput
+
+frame.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1
+	or input.UserInputType == Enum.UserInputType.Touch then
+
+		dragging = true
+		dragStart = input.Position
+		startPos = frame.Position
+
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+frame.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement
+	or input.UserInputType == Enum.UserInputType.Touch then
+		dragInput = input
+	end
+end)
+
+UIS.InputChanged:Connect(function(input)
+	if dragging and input == dragInput then
+		local delta = input.Position - dragStart
+		frame.Position = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset + delta.Y
+		)
+	end
+end)
+
+--------------------------------------------------
+-- Show / Hide Button
+--------------------------------------------------
+
+local open = Instance.new("TextButton")
+open.Size = UDim2.fromOffset(50,50)
+open.Position = UDim2.new(0,10,1,-60)
+open.Text = "☰"
+open.Font = Enum.Font.GothamBold
+open.TextSize = 24
+open.TextColor3 = Color3.new(1,1,1)
+open.BackgroundColor3 = Color3.fromRGB(0,170,255)
+open.Parent = gui
+
+Instance.new("UICorner",open).CornerRadius = UDim.new(1,0)
+
+open.MouseButton1Click:Connect(function()
+	frame.Visible = not frame.Visible
+end)
